@@ -11,7 +11,29 @@
     <a class="btn btn-sm btn-outline-primary" href="{% url 'logout' %}">Log Out</a>
     <hr>
 
-    <div id="emails-view">
+    <div class="list-group" id="emails-view"></div>
+
+    <div class="card" id="single-view">
+        <div class="card-body">
+            <h4 id="email-subject"></h4>
+            <table class"table" id="email-details">
+                <tbody>
+                    <tr>
+                        <th scope="row">From:</th>
+                        <td id="email-sender"></td>
+                    </tr>
+                    <tr>
+                        <th scope="row">To:</th>
+                        <td id="email-recipients"></td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Date:</th>
+                        <td id="email-timestamp"></td>
+                    </tr>
+                </tbody>
+            </table>
+            <p class="card-text" id="email-body"></p>
+        </div>
     </div>
 
     <div id="compose-view">
