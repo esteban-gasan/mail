@@ -37,55 +37,51 @@ function composeEmail() {
 }
 
 function loadMailbox(mailbox) {
+  document.querySelector("#mailbox-name").innerHTML = "";
+  const emailsTable = document.querySelector("#emails-table");
+  emailsTable.innerHTML = "";
+
   fetch(`/emails/${mailbox}`)
     .then((response) => response.json())
     .then((data) => {
-      console.log(data);
       data.forEach((email) => {
-        // Dynamically create a div-list for each email
-        const listItem = document.createElement("div");
-        // Add class for gray background if email is read
-        const bootstrapClasses = `list-group-item list-group-item-action${
-          email.read ? " list-group-item-dark" : ""
-        }`;
-        listItem.className = `email-box ${bootstrapClasses}`;
-        document.querySelector("#emails-view").append(listItem);
+        // Dynamically create a row for each email
+        const row = emailsTable.insertRow();
+        row.insertCell().append(`${email.sender}`);
+        row.insertCell().append(`${email.subject}`);
+        row.insertCell().append(`${email.timestamp}`);
 
-        // Add div for email info
-        const emailInfo = document.createElement("div");
-        // emailInfo.className = "col-3";
-        emailInfo.dataset.id = `${email.id}`;
-        emailInfo.innerHTML = `<p>Sender: ${email.sender}</p><p>Subject: ${email.subject}</p><p>${email.timestamp}</p>`;
-        listItem.append(emailInfo);
-        emailInfo.addEventListener("click", openEmail);
+        // Add class for gray background if email is read
+        row.className = `email-box${email.read ? " table-secondary" : ""}`;
+        row.dataset.id = `${email.id}`; // Used to fetch the email
+        row.addEventListener("click", openEmail);
 
         if (mailbox !== "sent") {
-          const action = mailbox === "inbox" ? "Archive" : "Unarchive";
-          const actionLower = action.toLowerCase();
-          const buttonDiv = document.createElement("div");
-          // buttonDiv.className = "col-2";
-
           const button = document.createElement("button");
-          button.className = `${actionLower}-btn btn btn-outline-success btn-sm`;
+          const buttonCell = row.insertCell();
+          buttonCell.className = "btn-cell";
+          buttonCell.append(button);
+          button.className = "btn btn-sm btn-outline-success";
           button.type = "button";
-          button.innerHTML = `${action}`;
-          buttonDiv.append(button);
-          listItem.append(buttonDiv);
-          button.addEventListener(
-            "click",
-            archiveEmail(email.id, !email.archived)
-          );
+          button.innerHTML = `${mailbox === "inbox" ? "Archive" : "Unarchive"}`;
+          button.addEventListener("click", (e) => {
+            e.stopPropagation(); // Stop event from bubbling up
+            fetch(`/emails/${email.id}`, {
+              method: "PUT",
+              body: JSON.stringify({ archived: !email.archived }),
+            }).then(() => loadMailbox("inbox"));
+          });
         }
       });
     });
 
-  // Show the mailbox and hide other views
+  // Show the mailbox and hide other views after fetching the emails
   displayView("emails");
 
   // Show the mailbox name
-  document.querySelector("#emails-view").innerHTML = `<h3>${
+  document.querySelector("#mailbox-name").innerHTML = `${
     mailbox.charAt(0).toUpperCase() + mailbox.slice(1)
-  }</h3>`;
+  }`;
 }
 
 function openEmail() {
@@ -106,9 +102,7 @@ function openEmail() {
         // Modify the read property of this mail on the server
         fetch(`/emails/${this.dataset.id}`, {
           method: "PUT",
-          body: JSON.stringify({
-            read: true,
-          }),
+          body: JSON.stringify({ read: true }),
         });
       }
     });
