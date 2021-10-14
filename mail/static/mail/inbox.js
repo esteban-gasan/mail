@@ -9,12 +9,13 @@ document.addEventListener("DOMContentLoaded", function () {
   document
     .querySelector("#archived")
     .addEventListener("click", () => loadMailbox("archive"));
-  document.querySelector("#compose").addEventListener("click", composeEmail);
+  document.querySelector("#compose").addEventListener("click", () => {
+    composeEmail();
+  });
+  document.querySelector("#compose-form").onsubmit = sendEmail;
 
   // By default, load the inbox
   loadMailbox("inbox");
-
-  document.querySelector("#compose-form").onsubmit = sendEmail;
 });
 
 function displayView(view) {
@@ -22,22 +23,41 @@ function displayView(view) {
   document.querySelector("#emails-view").style.display = "none";
   document.querySelector("#single-view").style.display = "none";
   document.querySelector("#compose-view").style.display = "none";
-
-  document.querySelector(`#${view}-view`).style.display = "block";
+  
+  if (view) document.querySelector(`#${view}-view`).style.display = "block";
 }
 
-function composeEmail() {
+function composeEmail(replyTo) {
+  var recipients = document.querySelector("#compose-recipients");
+  var subject = document.querySelector("#compose-subject");
+  var body = document.querySelector("#compose-body");
+
+  if (!replyTo) {
+    // Clear out composition fields
+    recipients.value = "";
+    subject.value = "";
+    body.value = "";
+  } else {
+    // Populate the form with the email details
+    const re = "Re: ";
+    recipients.value = replyTo.sender;
+    subject.value = `${replyTo.subject.startsWith(re) ? "" : re}${
+      replyTo.subject
+    }`;
+    body.value = `On ${replyTo.timestamp} ${replyTo.sender} wrote:\n"${replyTo.body}"\n\n`;
+  }
+
   // Show compose view and hide other views
   displayView("compose");
-
-  // Clear out composition fields
-  document.querySelector("#compose-recipients").value = "";
-  document.querySelector("#compose-subject").value = "";
-  document.querySelector("#compose-body").value = "";
 }
 
 function loadMailbox(mailbox) {
-  document.querySelector("#mailbox-name").innerHTML = "";
+  displayView(); // Hide all the views
+
+  // Change the mailbox name
+  document.querySelector("#mailbox-name").innerHTML = `${
+    mailbox.charAt(0).toUpperCase() + mailbox.slice(1)
+  }`;
   const emailsTable = document.querySelector("#emails-table");
   emailsTable.innerHTML = "";
 
@@ -73,30 +93,38 @@ function loadMailbox(mailbox) {
           });
         }
       });
+    })
+    .then(() => {
+      displayView("emails"); // Show the mailbox and hide other views
     });
-
-  // Show the mailbox and hide other views after fetching the emails
-  displayView("emails");
-
-  // Show the mailbox name
-  document.querySelector("#mailbox-name").innerHTML = `${
-    mailbox.charAt(0).toUpperCase() + mailbox.slice(1)
-  }`;
 }
 
 function openEmail() {
   // Display an email and its details
-  display_view("single");
+  const subject = document.querySelector("#email-subject");
+  const sender = document.querySelector("#email-sender");
+  const recipients = document.querySelector("#email-recipients");
+  const timestamp = document.querySelector("#email-timestamp");
+  const body = document.querySelector("#email-body");
+  subject.innerHTML = "&nbsp;";
+  sender.innerHTML = "";
+  recipients.innerHTML = "";
+  timestamp.innerHTML = "";
+  body.innerHTML = "";
+
   fetch(`/emails/${this.dataset.id}`)
     .then((response) => response.json())
     .then((email) => {
       // Update the single view with the email data
-      document.querySelector("#email-sender").innerHTML = email.sender;
-      document.querySelector("#email-recipients").innerHTML =
-        email.recipients.join(", ");
-      document.querySelector("#email-timestamp").innerHTML = email.timestamp;
-      document.querySelector("#email-body").innerHTML = email.body;
-      console.log(email);
+      subject.innerHTML = email.subject;
+      sender.innerHTML = email.sender;
+      recipients.innerHTML = email.recipients.join(", ");
+      timestamp.innerHTML = email.timestamp;
+      body.innerHTML = email.body;
+
+      document.querySelector("#reply-btn").onclick = () => {
+        composeEmail(email);
+      };
 
       if (email.read === false) {
         // Modify the read property of this mail on the server
@@ -105,7 +133,8 @@ function openEmail() {
           body: JSON.stringify({ read: true }),
         });
       }
-    });
+    })
+    .then(() => displayView("single")); // Show the email card
 }
 
 function sendEmail() {
@@ -123,14 +152,10 @@ function sendEmail() {
     .then((data) => {
       console.log(data); // TODO: alert user when email is sent, delete logs
     })
-    // .then(() => {
-    //     loadMailbox('sent');
-    // })
+    .then(() => loadMailbox("sent"))
     .catch((error) => {
       console.log(error);
     });
-
-  loadMailbox("sent");
 
   // Stop form from submitting
   return false;
