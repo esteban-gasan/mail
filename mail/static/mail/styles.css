@@ -1,3 +1,43 @@
 textarea {
-    min-height: 400px;
+    height: 200px;
+    margin-bottom: 12px;
+}
+
+input {
+    margin-bottom: 12px;
+}
+
+.container>button {
+    margin-right: 4px;
+}
+
+.email-box {
+    cursor: pointer;
+}
+
+.btn-cell {
+    width: 5%;
+}
+
+#emails-table {
+    border-top: thin solid #dddddd;
+    border-left: thin solid #dddddd;
+    border-right: thin solid #dddddd;
+}
+
+#email-details th {
+    width: 10%;
+}
+
+#email-body {
+    white-space: pre-wrap;
+}
+
+#reply-btn {
+    width: 100px;
+    margin-top: 10%;
+}
+
+#compose-view input[type="submit"] {
+    width: 100px;
 }
