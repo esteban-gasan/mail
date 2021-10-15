@@ -2,35 +2,49 @@ document.addEventListener("DOMContentLoaded", function () {
   // Use buttons to toggle between views
   document
     .querySelector("#inbox")
-    .addEventListener("click", () => loadMailbox("inbox"));
+    .addEventListener("click", () => loadMailbox("inbox", true));
   document
     .querySelector("#sent")
-    .addEventListener("click", () => loadMailbox("sent"));
+    .addEventListener("click", () => loadMailbox("sent", true));
   document
     .querySelector("#archived")
-    .addEventListener("click", () => loadMailbox("archive"));
+    .addEventListener("click", () => loadMailbox("archive", true));
   document.querySelector("#compose").addEventListener("click", () => {
+    // Add a new element to the browsing history
+    history.pushState({ mailbox: "compose" }, "", `#compose`);
     composeEmail();
   });
   document.querySelector("#compose-form").onsubmit = sendEmail;
 
   // By default, load the inbox
-  loadMailbox("inbox");
+  loadMailbox("inbox", true);
 });
+
+// Load the previous page when user goes back in history
+window.onpopstate = (e) => {
+  console.log(e.state);
+  if ("emailId" in e.state) {
+    openEmail(e.state.emailId);
+  } else {
+    e.state.mailbox === "compose"
+      ? composeEmail()
+      : loadMailbox(e.state.mailbox);
+  }
+};
 
 function displayView(view) {
   // Hide all the views, then only display the requested view
   document.querySelector("#emails-view").style.display = "none";
   document.querySelector("#single-view").style.display = "none";
   document.querySelector("#compose-view").style.display = "none";
-  
+
   if (view) document.querySelector(`#${view}-view`).style.display = "block";
 }
 
 function composeEmail(replyTo) {
-  var recipients = document.querySelector("#compose-recipients");
-  var subject = document.querySelector("#compose-subject");
-  var body = document.querySelector("#compose-body");
+  const recipients = document.querySelector("#compose-recipients");
+  const subject = document.querySelector("#compose-subject");
+  const body = document.querySelector("#compose-body");
 
   if (!replyTo) {
     // Clear out composition fields
@@ -51,7 +65,9 @@ function composeEmail(replyTo) {
   displayView("compose");
 }
 
-function loadMailbox(mailbox) {
+function loadMailbox(mailbox, push = false) {
+  // Add a new element to the browsing history
+  if (push) history.pushState({ mailbox: mailbox }, "", `#${mailbox}`);
   displayView(); // Hide all the views
 
   // Change the mailbox name
@@ -74,7 +90,18 @@ function loadMailbox(mailbox) {
         // Add class for gray background if email is read
         row.className = `email-box${email.read ? " table-secondary" : ""}`;
         row.dataset.id = `${email.id}`; // Used to fetch the email
-        row.addEventListener("click", openEmail);
+        row.addEventListener("click", (e) => {
+          // Add a new element to the browsing history
+          // Calling the pushState here, instead of inside the function
+          // prevents a new element from being pushed to history
+          history.pushState(
+            { mailbox: mailbox, emailId: email.id },
+            "",
+            `#${mailbox}/${email.id}`
+          );
+          openEmail(email.id);
+          // If using dataset: openEmail(e.currentTarget.dataset.id)
+        });
 
         if (mailbox !== "sent") {
           const button = document.createElement("button");
@@ -99,7 +126,7 @@ function loadMailbox(mailbox) {
     });
 }
 
-function openEmail() {
+function openEmail(emailId) {
   // Display an email and its details
   const subject = document.querySelector("#email-subject");
   const sender = document.querySelector("#email-sender");
@@ -112,7 +139,7 @@ function openEmail() {
   timestamp.innerHTML = "";
   body.innerHTML = "";
 
-  fetch(`/emails/${this.dataset.id}`)
+  fetch(`/emails/${emailId}`)
     .then((response) => response.json())
     .then((email) => {
       // Update the single view with the email data
@@ -123,12 +150,13 @@ function openEmail() {
       body.innerHTML = email.body;
 
       document.querySelector("#reply-btn").onclick = () => {
+        history.pushState({ mailbox: "compose" }, "", `#compose`);
         composeEmail(email);
       };
 
       if (email.read === false) {
         // Modify the read property of this mail on the server
-        fetch(`/emails/${this.dataset.id}`, {
+        fetch(`/emails/${emailId}`, {
           method: "PUT",
           body: JSON.stringify({ read: true }),
         });
