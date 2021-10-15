@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block body %}
-    <h2 class="mt-4 mb-4">{{ request.user.email }}</h2>
+    <h2 class="mt-4 mb-4" id="user-email">{{ request.user.email }}</h2>
 
     <button class="btn btn-sm btn-outline-primary" id="inbox">Inbox</button>
     <button class="btn btn-sm btn-outline-primary" id="compose">Compose</button>
@@ -19,6 +19,7 @@
     <div class="card" id="single-view">
         <div class="card-body">
             <h4 id="email-subject"></h4>
+            <button class="btn btn-sm btn-success" id="archive-btn"></button>
             <table class="table table-sm table-borderless" id="email-details">
                 <tbody>
                     <tr>

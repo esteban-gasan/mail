@@ -113,10 +113,7 @@ function loadMailbox(mailbox, push = false) {
           button.innerHTML = `${mailbox === "inbox" ? "Archive" : "Unarchive"}`;
           button.addEventListener("click", (e) => {
             e.stopPropagation(); // Stop event from bubbling up
-            fetch(`/emails/${email.id}`, {
-              method: "PUT",
-              body: JSON.stringify({ archived: !email.archived }),
-            }).then(() => loadMailbox("inbox"));
+            changeArchivedStatus(email.id, email.archived);
           });
         }
       });
@@ -133,6 +130,7 @@ function openEmail(emailId) {
   const recipients = document.querySelector("#email-recipients");
   const timestamp = document.querySelector("#email-timestamp");
   const body = document.querySelector("#email-body");
+  const archiveBtn = document.querySelector("#archive-btn");
   subject.innerHTML = "&nbsp;";
   sender.innerHTML = "";
   recipients.innerHTML = "";
@@ -149,12 +147,28 @@ function openEmail(emailId) {
       timestamp.innerHTML = email.timestamp;
       body.innerHTML = email.body;
 
+      // Check if the current user is not the sender
+      const userEmail = document.querySelector("#user-email").innerHTML;
+      if (userEmail !== email.sender) {
+        archiveBtn.innerHTML = `${!email.archived ? "Archive" : "Unarchive"}`;
+        archiveBtn.style.display = "block";
+        archiveBtn.onclick = (e) => {
+          console.log(e);
+          changeArchivedStatus(emailId, email.archived);
+          loadMailbox("inbox", true);
+        };
+      } else {
+        // Hide the archive button if the user sent the email
+        archiveBtn.style.display = "none";
+      }
+
+      // Add listener to the reply button
       document.querySelector("#reply-btn").onclick = () => {
         history.pushState({ mailbox: "compose" }, "", `#compose`);
         composeEmail(email);
       };
 
-      if (email.read === false) {
+      if (!email.read) {
         // Modify the read property of this mail on the server
         fetch(`/emails/${emailId}`, {
           method: "PUT",
@@ -163,6 +177,13 @@ function openEmail(emailId) {
       }
     })
     .then(() => displayView("single")); // Show the email card
+}
+
+function changeArchivedStatus(emailId, archived) {
+  fetch(`/emails/${emailId}`, {
+    method: "PUT",
+    body: JSON.stringify({ archived: !archived }),
+  });
 }
 
 function sendEmail() {
