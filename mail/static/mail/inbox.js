@@ -104,16 +104,18 @@ function loadMailbox(mailbox, push = false) {
         });
 
         if (mailbox !== "sent") {
-          const button = document.createElement("button");
+          const archiveBtn = document.createElement("button");
           const buttonCell = row.insertCell();
           buttonCell.className = "btn-cell";
-          buttonCell.append(button);
-          button.className = "btn btn-sm btn-outline-success";
-          button.type = "button";
-          button.innerHTML = `${mailbox === "inbox" ? "Archive" : "Unarchive"}`;
-          button.addEventListener("click", (e) => {
+          buttonCell.append(archiveBtn);
+          archiveBtn.className = "btn btn-sm btn-outline-success";
+          archiveBtn.type = "button";
+          archiveBtn.innerHTML = `${
+            mailbox === "inbox" ? "Archive" : "Unarchive"
+          }`;
+          archiveBtn.addEventListener("click", (e) => {
             e.stopPropagation(); // Stop event from bubbling up
-            changeArchivedStatus(email.id, email.archived);
+            changeArchivedStatus(e, email.id, email.archived);
           });
         }
       });
@@ -153,9 +155,7 @@ function openEmail(emailId) {
         archiveBtn.innerHTML = `${!email.archived ? "Archive" : "Unarchive"}`;
         archiveBtn.style.display = "block";
         archiveBtn.onclick = (e) => {
-          console.log(e);
-          changeArchivedStatus(emailId, email.archived);
-          loadMailbox("inbox", true);
+          changeArchivedStatus(e, emailId, email.archived);
         };
       } else {
         // Hide the archive button if the user sent the email
@@ -179,10 +179,21 @@ function openEmail(emailId) {
     .then(() => displayView("single")); // Show the email card
 }
 
-function changeArchivedStatus(emailId, archived) {
+function changeArchivedStatus(e, emailId, archived) {
+  var element = e.target;
   fetch(`/emails/${emailId}`, {
     method: "PUT",
     body: JSON.stringify({ archived: !archived }),
+  }).then(() => {
+    if (element.parentElement.tagName === "DIV") {
+      // When the button is clicked from the single email view
+      loadMailbox("inbox", true);
+    } else {
+      // Get the parent row and remove it
+      element = element.closest(".email-box");
+      element.style.animationPlayState = "running"; // Start the hide animation
+      element.addEventListener("animationend", () => element.remove());
+    }
   });
 }
 
@@ -201,7 +212,6 @@ function sendEmail() {
     .then((data) => {
       console.log(data); // TODO: alert user when email is sent, delete logs
     })
-    .then(() => loadMailbox("sent"))
     .catch((error) => {
       console.log(error);
     });

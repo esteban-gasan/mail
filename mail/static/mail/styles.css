@@ -11,18 +11,50 @@ input {
     margin-right: 4px;
 }
 
+@keyframes hide {
+    0% {
+        opacity: 1;
+        height: 100%;
+        line-height: 100%;
+        border-top: thin solid #dddddd;
+        border-left: thin solid #dddddd;
+        border-right: thin solid #dddddd;
+    }
+    75% {
+        opacity: 0;
+        height: 75%;
+        line-height: 75%;
+        border-top: thin solid #fff;
+        border-left: thin solid #fff;
+        border-right: thin solid #fff;
+    }
+    100% {
+        opacity: 0;
+        height: 0%;
+        line-height: 0%;
+        border-top: thin solid #fff;
+        border-left: thin solid #fff;
+        border-right: thin solid #fff;
+    }
+}
+
 .email-box {
     cursor: pointer;
-}
-
-.btn-cell {
-    width: 5%;
-}
-
-#emails-table {
     border-top: thin solid #dddddd;
     border-left: thin solid #dddddd;
     border-right: thin solid #dddddd;
+    animation-name: hide;
+    animation-duration: 1s;
+    animation-fill-mode: forwards;
+    animation-play-state: paused;
+}
+
+.btn-cell>button {
+    float: right;
+}
+
+#emails-table td {
+    width: 25%;
 }
 
 #email-details th {
