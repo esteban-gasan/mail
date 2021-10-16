@@ -22,7 +22,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // Load the previous page when user goes back in history
 window.onpopstate = (e) => {
-  console.log(e.state);
   if ("emailId" in e.state) {
     openEmail(e.state.emailId);
   } else {
@@ -210,11 +209,10 @@ function sendEmail() {
   })
     .then((response) => response.json())
     .then((data) => {
-      console.log(data); // TODO: alert user when email is sent, delete logs
+      if (data.error) alert(data.error);
     })
-    .catch((error) => {
-      console.log(error);
-    });
+    .then(() => loadMailbox("sent", true))
+    .catch((error) => console.log(error));
 
   // Stop form from submitting
   return false;
