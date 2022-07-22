@@ -1,4 +1,4 @@
-# Commerce
+# Mail
 
 A single page app to send emails, that works through API requests. This project is part of the CS50's Web Programming with Python and JavaScript course offered by HarvardX.
 
